@@ -1,6 +1,14 @@
 import os
 import sqlite3
 from flask import Flask, jsonify, request
+import webbrowser
+import threading
+
+def open_browser():
+    webbrowser.open("http://127.0.0.1:10000")
+
+threading.Timer(2, open_browser).start()
+
 
 app = Flask(__name__)
 
