@@ -1,19 +1,14 @@
 import os
 import sqlite3
-from flask import Flask, request, jsonify
+from flask import Flask, jsonify
 
 app = Flask(__name__)
 
-DB_NAME = "database.db"
-
-# ---------- Initialize Database ----------
-def get_db_connection():
-    conn = sqlite3.connect(DB_NAME)
-    conn.row_factory = sqlite3.Row
-    return conn
+# Use a safe writable path for Render
+DB_NAME = os.path.join(os.getcwd(), "database.db")
 
 def init_db():
-    conn = get_db_connection()
+    conn = sqlite3.connect(DB_NAME, check_same_thread=False)
     cursor = conn.cursor()
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS users (
@@ -27,55 +22,44 @@ def init_db():
 
 init_db()
 
-# ---------- Home Route (Fast Response) ----------
-@app.route("/", methods=["GET"])
+# FAST homepage (no blocking HTML, no DB heavy load)
+@app.route("/")
 def home():
-    return """
-    <h1>🌐 Web A Server is Running on Render</h1>
-    <p>API Endpoint: <a href='/get_users'>/get_users</a></p>
-    <p>Status: Active & Connected</p>
-    """
+    return {
+        "status": "Web A Server Running",
+        "api": "/get_users",
+        "message": "Permanent Render API Active"
+    }
 
-# ---------- Add Data API ----------
-@app.route("/add_user", methods=["POST"])
-def add_user():
-    data = request.get_json()
-    name = data.get("name")
-    email = data.get("email")
-
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute("INSERT INTO users (name, email) VALUES (?, ?)", (name, email))
-    conn.commit()
-    conn.close()
-
-    return {"message": "User added successfully"}
-
-# ---------- Get Users API (Used by Web B) ----------
-@app.route("/get_users", methods=["GET"])
+# Core API for Web B (Client EXE)
+@app.route("/get_users")
 def get_users():
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM users")
-    rows = cursor.fetchall()
-    conn.close()
+    try:
+        conn = sqlite3.connect(DB_NAME, check_same_thread=False)
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM users")
+        rows = cursor.fetchall()
+        conn.close()
 
-    users = []
-    for row in rows:
-        users.append({
-            "id": row["id"],
-            "name": row["name"],
-            "email": row["email"]
-        })
+        users = []
+        for row in rows:
+            users.append({
+                "id": row[0],
+                "name": row[1],
+                "email": row[2]
+            })
 
-    return jsonify(users)
+        return jsonify(users)
 
-# ---------- Health Check (Render uses this) ----------
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+# Health route (important for Render)
 @app.route("/status")
 def status():
-    return {"status": "running"}
+    return {"server": "running"}
 
-# IMPORTANT: Do NOT use fixed port for Render
+# REQUIRED for Render dynamic port binding
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
