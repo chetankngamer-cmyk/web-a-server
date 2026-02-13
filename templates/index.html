@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Web A - Server Dashboard</title>
+    <style>
+        body {
+            font-family: Arial;
+            background-color: #0f172a;
+            color: white;
+            padding: 40px;
+        }
+        .card {
+            background: #1e293b;
+            padding: 20px;
+            border-radius: 12px;
+            margin-top: 20px;
+        }
+        input, button {
+            padding: 10px;
+            margin: 5px;
+            border-radius: 6px;
+            border: none;
+        }
+        button {
+            background-color: #38bdf8;
+            cursor: pointer;
+        }
+        table {
+            width: 100%;
+            margin-top: 20px;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 10px;
+            border: 1px solid #334155;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>🌐 Web A Server Dashboard</h1>
+    <p>Server is running and database is active.</p>
+
+    <div class="card">
+        <h2>➕ Add User Data</h2>
+        <form method="POST">
+            <input type="text" name="name" placeholder="Enter Name" required>
+            <input type="email" name="email" placeholder="Enter Email" required>
+            <button type="submit">Save Data</button>
+        </form>
+    </div>
+
+    <div class="card">
+        <h2>📊 Stored Database Data</h2>
+        {% if users and users|length > 0 %}
+        <table>
+            <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Email</th>
+            </tr>
+            {% for user in users %}
+            <tr>
+                <td>{{ user[0] }}</td>
+                <td>{{ user[1] }}</td>
+                <td>{{ user[2] }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+        {% else %}
+        <p>No data in database yet.</p>
+        {% endif %}
+    </div>
+
+    <div class="card">
+        <h2>📡 API Endpoint</h2>
+        <a href="/get_users" style="color:#38bdf8;">View JSON Data</a>
+    </div>
+
+</body>
+</html>
