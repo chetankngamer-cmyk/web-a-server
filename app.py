@@ -1,11 +1,14 @@
 import os
 import sqlite3
+import webbrowser
+import threading
+import time
 from flask import Flask, jsonify, request, redirect
 
 app = Flask(__name__)
 DB_NAME = os.path.join(os.getcwd(), "database.db")
 
-# ---------- INIT DB ----------
+# ---------- INIT DATABASE ----------
 def init_db():
     conn = sqlite3.connect(DB_NAME, check_same_thread=False)
     c = conn.cursor()
@@ -21,7 +24,12 @@ def init_db():
 
 init_db()
 
-# ---------- WEB A DASHBOARD ----------
+# ---------- AUTO OPEN BROWSER (SAFE FOR EXE) ----------
+def open_browser():
+    time.sleep(2)  # wait for server to start
+    webbrowser.open("https://web-a-server.onrender.com")
+
+# ---------- MAIN DASHBOARD (WEB A) ----------
 @app.route("/")
 def home():
     conn = sqlite3.connect(DB_NAME, check_same_thread=False)
@@ -47,7 +55,7 @@ def home():
     <!DOCTYPE html>
     <html>
     <head>
-        <title>Web A - Live Server Dashboard</title>
+        <title>Web A - Server Dashboard</title>
 
         <script>
             let isUserInteracting = false;
@@ -122,7 +130,7 @@ def home():
             input {{
                 padding: 8px;
                 margin: 5px;
-                width: 200px;
+                width: 220px;
             }}
             .card {{
                 background: #1e293b;
@@ -146,7 +154,7 @@ def home():
     </head>
     <body>
 
-        <h1>🌐 Web A - Live Server Dashboard</h1>
+        <h1>🌐 Web A - Live Server (EXE Mode)</h1>
 
         <div class="card">
             <h2>➕ Add New User</h2>
@@ -159,7 +167,7 @@ def home():
         </div>
 
         <div class="card">
-            <h2>📊 Users (Auto Sync + Smart Refresh)</h2>
+            <h2>📊 Users Database (Smart Auto Sync)</h2>
             <table>
                 <tr>
                     <th>ID</th>
@@ -172,7 +180,7 @@ def home():
         </div>
 
         <div class="popup" id="popup">
-            <h2>Edit User (Server)</h2>
+            <h2>Edit User</h2>
             <form method="POST" action="/update_user_form">
                 <input type="hidden" name="id" id="edit_id">
                 <br>
@@ -229,12 +237,16 @@ def update_user():
     data = request.get_json()
     conn = sqlite3.connect(DB_NAME, check_same_thread=False)
     c = conn.cursor()
-    c.execute("UPDATE users SET name=?, email=? WHERE id=?",
-              (data["name"], data["email"], data["id"]))
+    c.execute(
+        "UPDATE users SET name=?, email=? WHERE id=?",
+        (data["name"], data["email"], data["id"])
+    )
     conn.commit()
     conn.close()
-    return {"message": "Updated"}
+    return {"message": "Updated Successfully"}
 
+# ---------- RUN SERVER (TERMINAL + AUTO BROWSER) ----------
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 10000))
+    port = 10000
+    threading.Thread(target=open_browser).start()
     app.run(host="0.0.0.0", port=port)
